@@ -1,0 +1,93 @@
+// Import libraries
+#include <Arduino.h>
+#include <U8x8lib.h>
+
+// Make synonyms using #define.  No semi-colons needed here.
+#define MOSFET 2   // The MOSFET driver for the water pump on digital I/O 2
+#define REDLED 4   // Big red LED on digital I/O 4
+#define BUTTON 6   // Push button on digital I/O 6
+#define MOISTURE A1
+
+
+// Creates an instance of the `U8X8_SSD1306_128X64_NONAME_HW_I2C` class
+auto display = U8X8_SSD1306_128X64_NONAME_HW_I2C(U8X8_PIN_NONE);
+
+
+
+/* -------------- Initialize the Grove board ------------- */
+void setup() {
+  
+    // put your setup code here, to run once:
+    pinMode(MOISTURE, INPUT);
+    pinMode(REDLED, OUTPUT);
+    pinMode(MOSFET, OUTPUT);
+    Serial.begin(9600);
+
+    //display settings
+    display.begin();
+    display.setFlipMode(0);
+    display.clearDisplay();
+
+}
+void sendMoistureData(){
+const auto value = analogRead(MOISTURE);
+if(value !=522) {
+  const byte data[] = {0,0,highByte(value),lowByte(value)};
+  Serial.write(data,4);
+  Serial.println();
+
+}
+}
+void loop() {
+  // put your main code here, to run repeatedly:
+  display.setFont(u8x8_font_profont29_2x3_r);
+  display.setCursor(0,0);
+  int moistureValue = analogRead(MOISTURE);
+
+  sendMoistureData();
+  //DATA
+  const auto receivedData = Serial.read();
+
+  char buf[16];
+  int a = 700;
+  
+  if(moistureValue >=a || receivedData == 435){
+
+    display.print("Pumping");
+    digitalWrite(REDLED, HIGH);
+    digitalWrite(MOSFET, HIGH);
+    delay(800);
+    display.clear();
+    {
+  
+    
+
+}
+  }
+  else if (receivedData == 1) {
+  digitalWrite(REDLED, LOW);
+    digitalWrite(MOSFET, LOW);
+    
+}
+else if (moistureValue < a && receivedData != 100 && receivedData != 2){
+  digitalWrite(REDLED, LOW);
+    digitalWrite(MOSFET, LOW);
+    
+}
+else if (moistureValue > 1 && receivedData == 100) {
+  digitalWrite(REDLED, HIGH);
+  
+}
+else if (moistureValue >1 && receivedData ==2){
+  digitalWrite(REDLED, LOW);
+  
+}
+else {
+  display.print("error");
+  digitalWrite(MOSFET, LOW);
+  
+}
+display.print(moistureValue);
+sprintf (buf, "%03d" , receivedData);
+}
+   
